@@ -47,10 +47,10 @@ export async function apiResetDriversAvailability() {
   });
 }
 
-export async function apiRequestRide({ user_area }) {
+export async function apiRequestRide({ user_area, requester_name }) {
   return requestJson("/request-ride", {
     method: "POST",
-    body: JSON.stringify({ user_area }),
+    body: JSON.stringify({ user_area, requester_name }),
   });
 }
 

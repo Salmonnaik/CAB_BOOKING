@@ -3,6 +3,7 @@ import { apiRequestRide } from "../api";
 
 export default function RequestRideForm({ areas, onRideAssigned }) {
   const [userArea, setUserArea] = useState("");
+  const [requesterName, setRequesterName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -16,6 +17,11 @@ export default function RequestRideForm({ areas, onRideAssigned }) {
     e.preventDefault();
     setError(null);
 
+    if (!requesterName.trim()) {
+      setError("Please enter requester name.");
+      return;
+    }
+
     if (!userArea) {
       setError("Please select a pickup area.");
       return;
@@ -23,7 +29,7 @@ export default function RequestRideForm({ areas, onRideAssigned }) {
 
     setLoading(true);
     try {
-      const result = await apiRequestRide({ user_area: userArea });
+      const result = await apiRequestRide({ user_area: userArea, requester_name: requesterName.trim() });
       if (onRideAssigned) onRideAssigned(result);
     } catch (err) {
       setError(err.message || "Ride request failed.");
@@ -36,6 +42,14 @@ export default function RequestRideForm({ areas, onRideAssigned }) {
     <div>
       <h2 className="title">Request Ride</h2>
       <form onSubmit={handleRequest}>
+        <div className="field">
+          <label>Requester Name</label>
+          <input
+            value={requesterName}
+            onChange={(e) => setRequesterName(e.target.value)}
+            placeholder="e.g. Rahul"
+          />
+        </div>
         <div className="field">
           <label>Pickup Area</label>
           <select

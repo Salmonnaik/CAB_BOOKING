@@ -72,12 +72,26 @@ function initSchema(database) {
     CREATE TABLE IF NOT EXISTS rides (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_area TEXT NOT NULL,
+      requester_name TEXT,
+      estimated_km REAL,
       driver_id INTEGER NOT NULL,
       status TEXT NOT NULL,
       created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY(driver_id) REFERENCES drivers(id)
     );
   `);
+
+  // Lightweight migration for older DB files (add columns if missing)
+  const rideCols = database
+    .prepare("PRAGMA table_info(rides)")
+    .all()
+    .map((c) => c.name);
+  if (!rideCols.includes("requester_name")) {
+    database.exec("ALTER TABLE rides ADD COLUMN requester_name TEXT;");
+  }
+  if (!rideCols.includes("estimated_km")) {
+    database.exec("ALTER TABLE rides ADD COLUMN estimated_km REAL;");
+  }
 
   // Indexes for faster lookup (beginner-friendly but production-oriented)
   database.exec(`
@@ -171,17 +185,19 @@ function resetAllDriversAvailability() {
   return info.changes;
 }
 
-function insertRide({ user_area, driver_id, status }) {
+function insertRide({ user_area, requester_name, estimated_km, driver_id, status }) {
   const stmt = db.prepare(
-    "INSERT INTO rides (user_area, driver_id, status) VALUES (?, ?, ?)"
+    "INSERT INTO rides (user_area, requester_name, estimated_km, driver_id, status) VALUES (?, ?, ?, ?, ?)"
   );
-  const info = stmt.run(user_area, driver_id, status);
+  const info = stmt.run(user_area, requester_name || null, estimated_km ?? null, driver_id, status);
   return db
     .prepare(
       `
         SELECT
           r.id,
           r.user_area,
+          r.requester_name,
+          r.estimated_km,
           r.driver_id,
           r.status,
           r.created_at,
@@ -201,6 +217,8 @@ function getAllRides() {
       SELECT
         r.id,
         r.user_area,
+        r.requester_name,
+        r.estimated_km,
         r.driver_id,
         d.name AS driver_name,
         d.area AS driver_area,

@@ -8,7 +8,17 @@ const { calculateDistance } = require("./distance.service");
 const { HttpError } = require("../utils/httpError");
 const { getAreaCoords } = require("./area.service");
 
-async function assignNearestAvailableDriver({ user_area }) {
+function makeFakeEstimatedTripKm(nearestDistanceKm) {
+  // "Fake" trip distance for demo purposes (not the driver-pickup distance).
+  // Produces realistic-looking values even when nearestDistanceKm is 0.
+  const base = Math.max(0.8, Number(nearestDistanceKm) || 0);
+  const multiplier = 1.4 + Math.random() * 0.8; // 1.4x .. 2.2x
+  const noise = Math.random() * 2.5; // up to +2.5 km
+  const km = base * multiplier + noise;
+  return Math.max(1, Math.round(km * 100) / 100);
+}
+
+async function assignNearestAvailableDriver({ user_area, requester_name }) {
   const availableDrivers = getAvailableDrivers();
 
   if (!availableDrivers || availableDrivers.length === 0) {
@@ -56,8 +66,11 @@ async function assignNearestAvailableDriver({ user_area }) {
   };
 
   // Store assignment into ride history.
+  const estimatedTripKm = makeFakeEstimatedTripKm(nearest.distanceKm);
   const ride = insertRide({
     user_area,
+    requester_name,
+    estimated_km: estimatedTripKm,
     driver_id: nearest.driver.id,
     status: "assigned",
   });
@@ -66,6 +79,7 @@ async function assignNearestAvailableDriver({ user_area }) {
     ride,
     driver: assignedDriver,
     nearestDistanceKm: nearest.distanceKm,
+    estimatedTripKm,
   };
 }
 

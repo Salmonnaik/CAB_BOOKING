@@ -24,14 +24,19 @@ export default function SimulateRides({ areas, onRideAssigned, onDriversRefresh 
       for (let i = 0; i < count; i += 1) {
         // Choose a random pickup area from the allowed Hyderabad list.
         const pickupArea = areaList[Math.floor(Math.random() * areaList.length)];
+        const requesterName = `SimUser-${i + 1}`;
 
         try {
-          const res = await apiRequestRide({ user_area: pickupArea });
+          const res = await apiRequestRide({
+            user_area: pickupArea,
+            requester_name: requesterName,
+          });
           lastSuccessful = res;
           setResults((prev) => [
             ...prev,
             {
               idx: i + 1,
+              requester_name: requesterName,
               user_area: pickupArea,
               driver: res.driver,
               nearestDistanceKm: res.nearestDistanceKm,
@@ -100,6 +105,7 @@ export default function SimulateRides({ areas, onRideAssigned, onDriversRefresh 
             <thead>
               <tr>
                 <th>#</th>
+                <th>Requester</th>
                 <th>Assigned Driver</th>
                 <th>Pickup Area</th>
                 <th>Driver Area</th>
@@ -110,6 +116,7 @@ export default function SimulateRides({ areas, onRideAssigned, onDriversRefresh 
               {results.map((r) => (
                 <tr key={r.idx}>
                   <td className="mono">{r.idx}</td>
+                  <td className="mono">{r.requester_name}</td>
                   <td>
                     <span className="mono">
                       #{r.driver.id} {r.driver.name}

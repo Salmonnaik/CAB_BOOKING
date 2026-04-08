@@ -1,5 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { apiGetAreas, apiGetDrivers, apiResetDriversAvailability, apiGetRides } from "./api";
+import {
+  apiAdminReset,
+  apiGetAreas,
+  apiGetDrivers,
+  apiResetDriversAvailability,
+  apiGetRides,
+} from "./api";
 import AddDriverForm from "./components/AddDriverForm";
 import DriverList from "./components/DriverList";
 import RequestRideForm from "./components/RequestRideForm";
@@ -78,6 +84,21 @@ export default function App() {
     }
   }
 
+  async function handleClearAll() {
+    setDriversError(null);
+    setRidesError(null);
+    setHighlightedDriverId(null);
+    setRideResult(null);
+    setRecentRides([]);
+
+    try {
+      await apiAdminReset();
+      await fetchDrivers();
+    } catch (err) {
+      setDriversError(err.message || "Failed to clear drivers and rides.");
+    }
+  }
+
   return (
     <div className="container">
       <h1>Cab Booking System</h1>
@@ -123,6 +144,16 @@ export default function App() {
             >
               Reset Drivers Availability
             </button>
+            <button
+              className="btnSecondary"
+              type="button"
+              onClick={handleClearAll}
+              disabled={loadingDrivers}
+              style={{ background: "#991b1b" }}
+              title="Deletes all drivers and ride history; then only drivers you add will exist"
+            >
+              Clear All Drivers & Rides
+            </button>
           </div>
         </div>
 
@@ -150,9 +181,11 @@ export default function App() {
                 <thead>
                   <tr>
                     <th>Ride ID</th>
+                    <th>Requester</th>
                     <th>Driver</th>
                     <th>Status</th>
                     <th>User</th>
+                    <th>Trip KM</th>
                     <th>When</th>
                   </tr>
                 </thead>
@@ -160,6 +193,7 @@ export default function App() {
                   {recentRides.map((r) => (
                     <tr key={r.id}>
                       <td className="mono">{r.id}</td>
+                      <td className="mono">{r.requester_name || "—"}</td>
                       <td>
                         <span className="mono">
                           #{r.driver_id} {r.driver_name} ({r.driver_area})
@@ -167,6 +201,7 @@ export default function App() {
                       </td>
                       <td className="mono">{r.status}</td>
                       <td className="mono">{r.user_area}</td>
+                      <td className="mono">{r.estimated_km != null ? Number(r.estimated_km).toFixed(2) : "—"}</td>
                       <td className="mono">{r.created_at}</td>
                     </tr>
                   ))}

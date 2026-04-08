@@ -1,4 +1,4 @@
-const { getAllDrivers, insertDriver } = require("../db/db");
+const { getAllDrivers, insertDriver, isSeedDisabled } = require("../db/db");
 
 function getHyderabadSeedDrivers() {
   // Area-based seed drivers (no coordinates exposed anywhere).
@@ -33,6 +33,10 @@ async function seedDriversIfEmpty() {
     }
     return;
   }
+
+  // If the user cleared all data via /admin/reset, we keep the system empty
+  // so only user-added drivers appear.
+  if (isSeedDisabled()) return;
 
   for (const d of drivers) {
     insertDriver(d);

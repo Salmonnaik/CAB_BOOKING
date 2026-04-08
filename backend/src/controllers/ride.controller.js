@@ -10,7 +10,7 @@ function requireNonEmptyString(value) {
 }
 
 async function requestRide(req, res) {
-  const { user_area } = req.body || {};
+  const { user_area, requester_name } = req.body || {};
 
   if (!requireNonEmptyString(user_area) || !isValidArea(user_area)) {
     throw new HttpError(400, "Invalid `user_area` (must be a Hyderabad area).", {
@@ -18,8 +18,15 @@ async function requestRide(req, res) {
     });
   }
 
+  if (!requireNonEmptyString(requester_name)) {
+    throw new HttpError(400, "Invalid `requester_name` (string, 1-80 chars).", {
+      expected: { requester_name: "string (1-80 chars)" },
+    });
+  }
+
   const result = await assignNearestAvailableDriver({
     user_area,
+    requester_name: requester_name.trim(),
   });
 
   return res.status(201).json(result);
